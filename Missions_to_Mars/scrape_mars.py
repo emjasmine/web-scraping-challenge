@@ -1,10 +1,12 @@
 ###########################
 #import dependencies
 ###########################
+
 import pandas as pd
 from splinter import Browser
 from bs4 import BeautifulSoup
 from webdriver_manager.chrome import ChromeDriverManager
+import time
 
 ###########################################################
 #Visit site ('https://mars.nasa.gov/news/') and scrape 
@@ -15,7 +17,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 def scrape():
 
     #initialize the large dictionary to store all scraped information
-    mars_dictionary = []
+    mars_dictionary = {}
 
     # create path and open browser window
     executable_path = {'executable_path': ChromeDriverManager().install()}
@@ -27,11 +29,11 @@ def scrape():
     # visit site
     browser.visit(url)
 
-    # grab page html
-    nasa_html = browser.html
+    #time delay 1 sec
+    time.sleep(1)
 
     # create soup object
-    soup = BeautifulSoup(nasa_html,'html.parser')
+    soup = BeautifulSoup(browser.html,'html.parser')
 
     # find title for the latest one, which is the one in the first box
     news_title = soup.find_all('div',class_='content_title')
@@ -66,14 +68,20 @@ def scrape():
     target = 'a[class="group  cursor-pointer block"]'
     browser.find_by_tag(target).click()
 
+    #time delay of 1 second
+    time.sleep(1)
+
     # grab page html
     target_html = browser.html
 
     # create soup object
     soup = BeautifulSoup(target_html,'html.parser')
-
-    image = soup.find_all('a', class_='BaseButton text-contrast-none w-full mb-5 -primary -compact inline-block')
-    featured_image_url = image[0]['href']
+    
+    #find all anchors and loop through to find href by using get_text for JPG
+    anchors = soup.find_all('a')
+    for a in anchors:
+        if 'JPG' in a.get_text():
+            featured_image_url=a['href']
 
     #append the featured image url to the larger mars_dictionary
     mars_dictionary['featured_image_url'] = featured_image_url
@@ -96,7 +104,7 @@ def scrape():
     #rename columns
     mars_tables.columns = ['Fact','Value']
     #convert dataframe back to html
-    mars_tables_html = mars_tables.to_html
+    mars_tables_html = mars_tables.to_html()
 
     #append the mars_table to the larger mars_dictionary
     mars_dictionary['mars_tables_html'] =  mars_tables_html
